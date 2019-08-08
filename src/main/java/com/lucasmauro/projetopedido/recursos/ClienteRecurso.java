@@ -30,7 +30,7 @@ public class ClienteRecurso {
 	private ClienteServico servico;
 
 	@RequestMapping(value="/{id}", method=RequestMethod.GET)
-	public ResponseEntity<?> find(@PathVariable Integer id) {			
+	public ResponseEntity<Cliente> find(@PathVariable Integer id) {			
 		Cliente obj = servico.find(id);
 		return ResponseEntity.ok().body(obj);		
 	}

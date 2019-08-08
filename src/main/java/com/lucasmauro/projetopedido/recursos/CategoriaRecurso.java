@@ -29,7 +29,7 @@ public class CategoriaRecurso {
 	private CategoriaServico servico;
 
 	@RequestMapping(value="/{id}", method=RequestMethod.GET)
-	public ResponseEntity<?> find(@PathVariable Integer id) {			
+	public ResponseEntity<Categoria> find(@PathVariable Integer id) {			
 		Categoria obj = servico.find(id);
 		return ResponseEntity.ok().body(obj);		
 	}
