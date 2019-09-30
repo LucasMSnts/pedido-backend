@@ -2,7 +2,7 @@
 
 Operações de CRUD
 
-### Objetivo
+### Objetivos
 
 - Implementar requisições POST, GET, PUT e DELETE para inserir, obter, atualizar e deletar entidades, respectivamente, 
 seguindo boas práticas REST e de desenvolvimento em camadas.
