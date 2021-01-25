@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.lucasmauro.projetopedido.servicos.excecoes.AuthorizationException;
 import com.lucasmauro.projetopedido.servicos.excecoes.DataIntegrityException;
 import com.lucasmauro.projetopedido.servicos.excecoes.ObjectNotFoundException;
 
@@ -37,5 +38,12 @@ public class RecursoExceptionHandler {
 			erro.addError(x.getField(), x.getDefaultMessage());
 		}		
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
+	}
+	
+	@ExceptionHandler(AuthorizationException.class)
+	public ResponseEntity<ErroPadrao> autorizacao(AuthorizationException e, HttpServletRequest request){
+		
+		ErroPadrao erro = new ErroPadrao(HttpStatus.FORBIDDEN.value(), e.getMessage(), System.currentTimeMillis());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
 	}
 }
