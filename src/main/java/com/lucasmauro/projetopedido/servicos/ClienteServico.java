@@ -51,6 +51,9 @@ public class ClienteServico {
 	@Value("${img.prefix.client.profile}")
 	private String prefix;
 	
+	@Value("${img.profile.size}")
+	private Integer size;
+	
 	public Cliente find(Integer id) {
 		
 		UsuarioSS usuario = UsuarioServico.authenticated();
@@ -129,6 +132,9 @@ public class ClienteServico {
 		}
 		
 		BufferedImage jpgImagem = imagemServico.getJpgImageFromFile(multipartFile);
+		jpgImagem = imagemServico.cropSquare(jpgImagem);
+		jpgImagem = imagemServico.resize(jpgImagem, size);
+		
 		String fileName = prefix + usuario.getId() + ".jpg";
 		
 		return s3Servico.uploadFile(imagemServico.getInputStream(jpgImagem, "jpg"), fileName, "image");
