@@ -1,10 +1,12 @@
 package com.lucasmauro.projetopedido.servicos;
 
+import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +44,12 @@ public class ClienteServico {
 	
 	@Autowired
 	private S3Servico s3Servico;
+	
+	@Autowired
+	private ImagemServico imagemServico;
+	
+	@Value("${img.prefix.client.profile}")
+	private String prefix;
 	
 	public Cliente find(Integer id) {
 		
@@ -120,12 +128,9 @@ public class ClienteServico {
 			throw new AuthorizationException("Acesso negado");
 		}
 		
-		URI uri = s3Servico.uploadFile(multipartFile);
+		BufferedImage jpgImagem = imagemServico.getJpgImageFromFile(multipartFile);
+		String fileName = prefix + usuario.getId() + ".jpg";
 		
-		Cliente cli = repo.findByEmail(usuario.getUsername());
-		cli.setImageUrl(uri.toString());
-		repo.save(cli);
-		
-		return uri;
+		return s3Servico.uploadFile(imagemServico.getInputStream(jpgImagem, "jpg"), fileName, "image");
 	}
 }
