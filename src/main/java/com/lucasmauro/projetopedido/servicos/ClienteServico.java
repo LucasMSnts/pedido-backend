@@ -32,40 +32,40 @@ import com.lucasmauro.projetopedido.servicos.excecoes.ObjectNotFoundException;
 
 @Service
 public class ClienteServico {
-	
+
 	@Autowired
 	private BCryptPasswordEncoder pe;
 
 	@Autowired
 	private ClienteRepositorio repo;
-	
+
 	@Autowired
 	private EnderecoRepositorio enderecoRepositorio;
-	
+
 	@Autowired
 	private S3Servico s3Servico;
-	
+
 	@Autowired
 	private ImagemServico imagemServico;
-	
+
 	@Value("${img.prefix.client.profile}")
 	private String prefix;
-	
+
 	@Value("${img.profile.size}")
 	private Integer size;
-	
+
 	public Cliente find(Integer id) {
-		
+
 		UsuarioSS usuario = UsuarioServico.authenticated();
-		if (usuario==null || !usuario.hasRole(Perfil.ADMIN) && !id.equals(usuario.getId())) {
+		if (usuario == null || !usuario.hasRole(Perfil.ADMIN) && !id.equals(usuario.getId())) {
 			throw new AuthorizationException("Acesso negado");
 		}
-		
+
 		Optional<Cliente> obj = repo.findById(id);
 		return obj.orElseThrow(() -> new ObjectNotFoundException(
 				"Objeto não encontrado! Id: " + id + ", Tipo: " + Cliente.class.getName()));
-	}	
-	
+	}
+
 	@Transactional
 	public Cliente insert(Cliente obj) {
 		obj.setId(null);
@@ -73,13 +73,13 @@ public class ClienteServico {
 		enderecoRepositorio.saveAll(obj.getEnderecos());
 		return obj;
 	}
-	
-	public Cliente update(Cliente obj)	{
+
+	public Cliente update(Cliente obj) {
 		Cliente newObj = find(obj.getId());
 		updateData(newObj, obj);
 		return repo.save(newObj);
 	}
-	
+
 	public void delete(Integer id) {
 		find(id);
 		try {
@@ -88,22 +88,39 @@ public class ClienteServico {
 			throw new DataIntegrityException("Não é possível excluir porque há pedidos relacionados");
 		}
 	}
-	
+
 	public List<Cliente> findAll() {
 		return repo.findAll();
 	}
-	
-	public Page<Cliente> findPage(Integer page, Integer linhasPorPaginas, String orderBy, String direcao) { // direcao = ordem crescente ou descrecente 
+
+	public Cliente findByEmail(String email) {
+		UsuarioSS usuario = UsuarioServico.authenticated();
+		if (usuario == null || !usuario.hasRole(Perfil.ADMIN) && !email.equals(usuario.getUsername())) {
+			throw new AuthorizationException("Acesso negado");
+		}
+		Cliente obj = repo.findByEmail(email);
+		if (obj == null) {
+			throw new ObjectNotFoundException(
+					"Objeto não encontrado! Id: " + usuario.getId() + ", Tipo: " + Cliente.class.getName());
+		}
+		return obj;
+	}
+
+	public Page<Cliente> findPage(Integer page, Integer linhasPorPaginas, String orderBy, String direcao) { // direcao =
+																											// ordem
+																											// crescente
+																											// ou
+																											// descrecente
 		PageRequest pageRequest = PageRequest.of(page, linhasPorPaginas, Direction.valueOf(direcao), orderBy);
 		return repo.findAll(pageRequest);
 	}
-	
+
 	public Cliente fromDTO(ClienteDTO objDTO) {
 		return new Cliente(objDTO.getId(), objDTO.getNome(), objDTO.getEmail(), null, null, null);
 	}
-	
+
 	public Cliente fromDTO(ClienteNovoDTO objDto) {
-		Cliente cli = new Cliente(null, objDto.getNome(), objDto.getEmail(), objDto.getCpfOuCnpj(), 
+		Cliente cli = new Cliente(null, objDto.getNome(), objDto.getEmail(), objDto.getCpfOuCnpj(),
 				TipoCliente.toEnum(objDto.getTipo()), pe.encode(objDto.getSenha()));
 		Cidade cid = new Cidade(objDto.getCidadeId(), null, null);
 		Endereco end = new Endereco(null, objDto.getLogradouro(), objDto.getNumero(), objDto.getComplemento(),
@@ -118,25 +135,25 @@ public class ClienteServico {
 		}
 		return cli;
 	}
-	
+
 	private void updateData(Cliente newObj, Cliente obj) {
 		newObj.setNome(obj.getNome());
 		newObj.setEmail(obj.getEmail());
 	}
-	
+
 	public URI uploadProfilePicture(MultipartFile multipartFile) {
-		
+
 		UsuarioSS usuario = UsuarioServico.authenticated();
-		if(usuario == null) {
+		if (usuario == null) {
 			throw new AuthorizationException("Acesso negado");
 		}
-		
+
 		BufferedImage jpgImagem = imagemServico.getJpgImageFromFile(multipartFile);
 		jpgImagem = imagemServico.cropSquare(jpgImagem);
 		jpgImagem = imagemServico.resize(jpgImagem, size);
-		
+
 		String fileName = prefix + usuario.getId() + ".jpg";
-		
+
 		return s3Servico.uploadFile(imagemServico.getInputStream(jpgImagem, "jpg"), fileName, "image");
 	}
 }
